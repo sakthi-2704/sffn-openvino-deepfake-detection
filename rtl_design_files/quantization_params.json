@@ -1,0 +1,40 @@
+{
+  "scales": {
+    "/backbone/backbone.1/backbone.1.0/block/block.3/activation_post_process_3/QuantizeLinear_output_0": 0.00390625,
+    "/backbone/backbone.2/backbone.2.0/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0.00390625,
+    "/backbone/backbone.2/backbone.2.1/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0.00390625,
+    "/backbone/backbone.3/backbone.3.0/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0.00390625,
+    "/backbone/backbone.3/backbone.3.1/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0.00390625,
+    "/backbone/backbone.4/backbone.4.0/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0.00390625,
+    "/backbone/backbone.4/backbone.4.1/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0.00390625,
+    "/backbone/backbone.4/backbone.4.2/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0.00390625,
+    "/backbone/backbone.5/backbone.5.0/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0.00390625,
+    "/backbone/backbone.5/backbone.5.1/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0.00390625,
+    "/backbone/backbone.5/backbone.5.2/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0.00390625,
+    "/backbone/backbone.6/backbone.6.0/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0.00390625,
+    "/backbone/backbone.6/backbone.6.1/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0.00390625,
+    "/backbone/backbone.6/backbone.6.2/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0.00390625,
+    "/backbone/backbone.6/backbone.6.3/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0.00390625,
+    "/backbone/backbone.7/backbone.7.0/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0.00390625
+  },
+  "zero_points": {
+    "/backbone/backbone.1/backbone.1.0/block/block.3/activation_post_process_3/QuantizeLinear_output_0": 0,
+    "/backbone/backbone.2/backbone.2.0/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0,
+    "/backbone/backbone.2/backbone.2.1/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0,
+    "/backbone/backbone.3/backbone.3.0/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0,
+    "/backbone/backbone.3/backbone.3.1/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0,
+    "/backbone/backbone.4/backbone.4.0/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0,
+    "/backbone/backbone.4/backbone.4.1/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0,
+    "/backbone/backbone.4/backbone.4.2/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0,
+    "/backbone/backbone.5/backbone.5.0/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0,
+    "/backbone/backbone.5/backbone.5.1/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0,
+    "/backbone/backbone.5/backbone.5.2/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0,
+    "/backbone/backbone.6/backbone.6.0/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0,
+    "/backbone/backbone.6/backbone.6.1/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0,
+    "/backbone/backbone.6/backbone.6.2/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0,
+    "/backbone/backbone.6/backbone.6.3/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0,
+    "/backbone/backbone.7/backbone.7.0/block/block.6/activation_post_process_3/QuantizeLinear_output_0": 0
+  },
+  "bit_width": 8,
+  "scheme": "asymmetric_per_tensor"
+}

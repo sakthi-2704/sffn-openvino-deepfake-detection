@@ -1,0 +1,25 @@
+﻿# Virtual environment
+openvino_env/
+
+# Large model binaries
+*.bin
+*.onnx
+
+# Keep XML files
+!*.xml
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Reports
+reports/
+reports_async/
+
+# RTL large files
+rtl_design_files/weights/
+rtl_design_files/mif/
+
+# Windows
+Thumbs.db
+desktop.ini
