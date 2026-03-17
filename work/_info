@@ -1,0 +1,106 @@
+m255
+K4
+z2
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dC:/Users/PC/OneDrive/Desktop/Darshan/ECE_FTW/Deepfake_Detection/OpenVINO
+vmac_unit_int8
+Z1 DXx6 sv_std 3 std 0 22 AD7iAPLo6nTIKk<N0eo=D3
+Z2 DXx4 work 11 sffn_params 0 22 ahTggI?LPnL_fYR@d`^Ld1
+DXx4 work 21 mac_unit_int8_sv_unit 0 22 ^fVhDE^diR1dZ:1X0PI@12
+Z3 VDg1SIo80bB@j0V0VzS_@n1
+r1
+!s85 0
+31
+!i10b 1
+!s100 9zEE3>h;g1Ud;o60e0YkL0
+I`1JFJjV[adA4oDCho_NPW2
+!s105 mac_unit_int8_sv_unit
+S1
+R0
+Z4 w1773765509
+Z5 8mac_unit_int8.sv
+Z6 Fmac_unit_int8.sv
+L0 3
+Z7 OV;L;10.5b;63
+Z8 !s108 1773766488.000000
+Z9 !s107 mac_unit_int8.sv|
+Z10 !s90 -reportprogress|300|-sv|mac_unit_int8.sv|
+!i113 1
+o-sv
+Z11 tCvgOpt 0
+Xmac_unit_int8_sv_unit
+R1
+R2
+V^fVhDE^diR1dZ:1X0PI@12
+r1
+!s85 0
+31
+!i10b 1
+!s100 ?bbdPF:moiB]Nh`Qz^B[b2
+I^fVhDE^diR1dZ:1X0PI@12
+!i103 1
+S1
+R0
+R4
+R5
+R6
+L0 1
+R7
+R8
+R9
+R10
+!i113 1
+o-sv
+R11
+Xsffn_params
+R1
+Z12 !s110 1773766488
+!i10b 1
+!s100 WjT@gg^T:Ycmz<NPOS1bz3
+IahTggI?LPnL_fYR@d`^Ld1
+VahTggI?LPnL_fYR@d`^Ld1
+S1
+R0
+w1773657917
+8sffn_params_pkg.sv
+Fsffn_params_pkg.sv
+L0 5
+R7
+r1
+!s85 0
+31
+R8
+!s107 sffn_params_pkg.sv|
+!s90 -reportprogress|300|-sv|sffn_params_pkg.sv|
+!i113 1
+o-sv
+R11
+vtb_mac_unit_int8
+R1
+R12
+!i10b 1
+!s100 Gf2AII3A>_V9]UWK0OA^M0
+IADiElzZ97gG^9mMY9le@71
+R3
+!s105 tb_mac_unit_int8_sv_unit
+S1
+R0
+w1773765573
+8tb_mac_unit_int8.sv
+Ftb_mac_unit_int8.sv
+L0 3
+R7
+r1
+!s85 0
+31
+R8
+!s107 tb_mac_unit_int8.sv|
+!s90 -reportprogress|300|-sv|tb_mac_unit_int8.sv|
+!i113 1
+o-sv
+R11
