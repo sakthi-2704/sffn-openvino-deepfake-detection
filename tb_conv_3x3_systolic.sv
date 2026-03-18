@@ -25,6 +25,7 @@ module tb_conv_3x3_systolic;
     logic signed [7:0]  weights [0:OUT_CH-1][0:IN_CH-1][0:2][0:2];
     logic signed [31:0] pixel_out [0:OUT_CH-1];
     logic               out_valid;
+    integer col_cnt_check;
 
     // ── Instantiate DUT ───────────────────────────────────────
     conv_3x3_systolic #(
@@ -84,6 +85,7 @@ module tb_conv_3x3_systolic;
     // ── Main test ─────────────────────────────────────────────
     initial begin
         // Initialize
+        col_cnt_check=0;
         rst_n       = 0;
         start       = 0;
         pixel_valid = 0;
@@ -152,8 +154,6 @@ module tb_conv_3x3_systolic;
     end
 
     // ── Column counter for display formatting ─────────────────
-    integer col_cnt_check;
-    initial col_cnt_check = 0;
     always @(posedge out_valid) begin
         col_cnt_check = col_cnt_check + 1;
     end
