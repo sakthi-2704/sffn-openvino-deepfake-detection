@@ -8,11 +8,60 @@ z2
 !i10f 100
 cModel Technology
 Z0 dC:/Users/PC/OneDrive/Desktop/Darshan/ECE_FTW/Deepfake_Detection/OpenVINO
-vmac_unit_int8
+vconv_1x1_engine
 Z1 DXx6 sv_std 3 std 0 22 AD7iAPLo6nTIKk<N0eo=D3
 Z2 DXx4 work 11 sffn_params 0 22 ahTggI?LPnL_fYR@d`^Ld1
-DXx4 work 21 mac_unit_int8_sv_unit 0 22 ^fVhDE^diR1dZ:1X0PI@12
+DXx4 work 23 conv_1x1_engine_sv_unit 0 22 AP]U0U2DPd6ba=SZ3A`g^3
 Z3 VDg1SIo80bB@j0V0VzS_@n1
+r1
+!s85 0
+31
+!i10b 1
+!s100 e34eDWf@_0afeC9R[kga<3
+IUKKS<`mz9hRf=HL0>Kd591
+!s105 conv_1x1_engine_sv_unit
+S1
+R0
+Z4 w1773855845
+Z5 8conv_1x1_engine.sv
+Z6 Fconv_1x1_engine.sv
+L0 26
+Z7 OV;L;10.5b;63
+Z8 !s108 1773856385.000000
+Z9 !s107 conv_1x1_engine.sv|
+Z10 !s90 -reportprogress|300|-sv|conv_1x1_engine.sv|
+!i113 1
+o-sv
+Z11 tCvgOpt 0
+Xconv_1x1_engine_sv_unit
+R1
+R2
+VAP]U0U2DPd6ba=SZ3A`g^3
+r1
+!s85 0
+31
+!i10b 1
+!s100 ZS@5?Ya32<oEJ`^eK:IjJ3
+IAP]U0U2DPd6ba=SZ3A`g^3
+!i103 1
+S1
+R0
+R4
+R5
+R6
+L0 24
+R7
+R8
+R9
+R10
+!i113 1
+o-sv
+R11
+vmac_unit_int8
+R1
+R2
+DXx4 work 21 mac_unit_int8_sv_unit 0 22 ^fVhDE^diR1dZ:1X0PI@12
+R3
 r1
 !s85 0
 31
@@ -22,17 +71,17 @@ I`1JFJjV[adA4oDCho_NPW2
 !s105 mac_unit_int8_sv_unit
 S1
 R0
-Z4 w1773765509
-Z5 8mac_unit_int8.sv
-Z6 Fmac_unit_int8.sv
+Z12 w1773765509
+Z13 8mac_unit_int8.sv
+Z14 Fmac_unit_int8.sv
 L0 3
-Z7 OV;L;10.5b;63
-Z8 !s108 1773768146.000000
-Z9 !s107 mac_unit_int8.sv|
-Z10 !s90 -reportprogress|300|-sv|mac_unit_int8.sv|
+R7
+Z15 !s108 1773856374.000000
+Z16 !s107 mac_unit_int8.sv|
+Z17 !s90 -reportprogress|300|-sv|mac_unit_int8.sv|
 !i113 1
 o-sv
-Z11 tCvgOpt 0
+R11
 Xmac_unit_int8_sv_unit
 R1
 R2
@@ -46,20 +95,20 @@ I^fVhDE^diR1dZ:1X0PI@12
 !i103 1
 S1
 R0
-R4
-R5
-R6
+R12
+R13
+R14
 L0 1
 R7
-R8
-R9
-R10
+R15
+R16
+R17
 !i113 1
 o-sv
 R11
 Xsffn_params
 R1
-!s110 1773768142
+!s110 1773856364
 !i10b 1
 !s100 WjT@gg^T:Ycmz<NPOS1bz3
 IahTggI?LPnL_fYR@d`^Ld1
@@ -74,9 +123,33 @@ R7
 r1
 !s85 0
 31
-!s108 1773768142.000000
+!s108 1773856363.000000
 !s107 sffn_params_pkg.sv|
 !s90 -reportprogress|300|-sv|sffn_params_pkg.sv|
+!i113 1
+o-sv
+R11
+vtb_conv_1x1_engine
+R1
+!s110 1773856395
+!i10b 1
+!s100 zRoi=KgL4J1c>lo@a;;Bn2
+Icj4ThdEz5gBC3^BBZZh8J0
+R3
+!s105 tb_conv_1x1_engine_sv_unit
+S1
+R0
+w1773856114
+8tb_conv_1x1_engine.sv
+Ftb_conv_1x1_engine.sv
+L0 14
+R7
+r1
+!s85 0
+31
+!s108 1773856395.000000
+!s107 tb_conv_1x1_engine.sv|
+!s90 -reportprogress|300|-sv|tb_conv_1x1_engine.sv|
 !i113 1
 o-sv
 R11
