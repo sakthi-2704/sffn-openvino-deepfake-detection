@@ -1,244 +1,188 @@
 // ============================================================
-// conv_3x3_systolic.sv
-// 3x3 Convolution using Systolic Array Architecture
-//
-// Handles 4 layers in SFFN:
-//   [000] stem conv     : in=3,   out=32,  stride=2
-//   [081] freq stream 0 : in=2,   out=32,  stride=1
-//   [082] freq stream 1 : in=32,  out=64,  stride=1
-//   [083] recon head    : in=128, out=2,   stride=1
-//
-// How it works:
-//   1. Line buffer stores 3 rows of input
-//   2. 3x3 window slides across input feature map
-//   3. 3x3 = 9 MAC units compute one output pixel per pass
-//   4. Accumulates over all input channels
-//
-// Architecture:
-//   ┌─────────────────────────────┐
-//   │  Input → Line Buffer        │
-//   │          ↓                  │
-//   │  3x3 Window Extractor       │
-//   │          ↓                  │
-//   │  9 MAC Units (Systolic)     │
-//   │          ↓                  │
-//   │  Accumulator → Output       │
-//   └─────────────────────────────┘
+// conv_3x3_systolic.sv (v2 - corrected)
+// 3x3 Convolution Engine
+// Fixed: continuous pixel streaming with output pipeline
 // ============================================================
 
 import sffn_params::*;
 
 module conv_3x3_systolic #(
-    parameter int IN_CH     = 3,      // input channels
-    parameter int OUT_CH    = 32,     // output channels
-    parameter int IMG_H     = 224,    // input height
-    parameter int IMG_W     = 224,    // input width
-    parameter int STRIDE    = 1,      // stride (1 or 2)
-    parameter int PADDING   = 1       // zero padding (keep size)
+    parameter int IN_CH   = 3,
+    parameter int OUT_CH  = 32,
+    parameter int IMG_H   = 224,
+    parameter int IMG_W   = 224,
+    parameter int STRIDE  = 1,
+    parameter int PADDING = 1
 )(
-    input  logic                          clk,
-    input  logic                          rst_n,
-    input  logic                          start,
-
-    // Input pixel stream (one pixel per clock, all channels)
-    input  logic signed [7:0]             pixel_in  [0:IN_CH-1],
-    input  logic                          pixel_valid,  // pixel_in is valid
-
-    // Weights: [out_ch][in_ch][3][3]
-    input  logic signed [7:0]             weights [0:OUT_CH-1]
-                                                   [0:IN_CH-1]
-                                                   [0:2][0:2],
-
-    // Output
-    output logic signed [ACCUM_BITS-1:0]  pixel_out [0:OUT_CH-1],
-    output logic                          out_valid
+    input  logic                         clk,
+    input  logic                         rst_n,
+    input  logic                         start,
+    input  logic signed [7:0]            pixel_in  [0:IN_CH-1],
+    input  logic                         pixel_valid,
+    input  logic signed [7:0]            weights [0:OUT_CH-1]
+                                                  [0:IN_CH-1]
+                                                  [0:2][0:2],
+    output logic signed [ACCUM_BITS-1:0] pixel_out [0:OUT_CH-1],
+    output logic                         out_valid
 );
 
-    // ── Derived parameters ────────────────────────────────────
-    localparam OUT_H = (IMG_H + 2*PADDING - 3) / STRIDE + 1;
-    localparam OUT_W = (IMG_W + 2*PADDING - 3) / STRIDE + 1;
+    // ── Line buffer: 3 rows x IMG_W cols x IN_CH channels ────
+    logic signed [7:0] line_buf [0:2][0:IMG_W-1][0:IN_CH-1];
 
-    // ── Line buffers ──────────────────────────────────────────
-    // Store 3 rows of input for sliding window
-    // line_buf[row][col][channel]
-    logic signed [7:0] line_buf [0:2][0:IMG_W+1][0:IN_CH-1];
+    // ── Pixel position tracking ───────────────────────────────
+    logic [$clog2(IMG_H)-1:0] in_row;   // row of incoming pixel
+    logic [$clog2(IMG_W)-1:0] in_col;   // col of incoming pixel
+    logic [$clog2(IMG_H)-1:0] out_row;  // row of output pixel
+    logic [$clog2(IMG_W)-1:0] out_col;  // col of output pixel
 
-    // ── 3x3 window ────────────────────────────────────────────
-    // Extracted 3x3 patch for current position
-    logic signed [7:0] window [0:2][0:2][0:IN_CH-1];
+    // ── How many pixels have been received ───────────────────
+    logic [$clog2(IMG_H*IMG_W+1)-1:0] pix_count;
 
-    // ── Position counters ─────────────────────────────────────
-    logic [$clog2(IMG_H+2)-1:0] row_cnt;  // current row
-    logic [$clog2(IMG_W+2)-1:0] col_cnt;  // current col
-    logic [$clog2(IN_CH)-1:0]   ic_cnt;   // input channel counter
+    // ── Active flag ───────────────────────────────────────────
+    logic active;
 
     // ── Accumulators ──────────────────────────────────────────
     logic signed [ACCUM_BITS-1:0] accum [0:OUT_CH-1];
 
-    // ── State machine ─────────────────────────────────────────
-    typedef enum logic [2:0] {
-        IDLE      = 3'b000,
-        FILL_BUF  = 3'b001,   // fill line buffer
-        COMPUTE   = 3'b010,   // compute 3x3 conv
-        ACC_IC    = 3'b011,   // accumulate input channels
-        OUT_PIXEL = 3'b100    // output result
-    } state_t;
+    // ── Kernel position counters ──────────────────────────────
+    logic [1:0] kr, kc;
+    logic [$clog2(IN_CH)-1:0] ic;
+    logic computing;
 
-    state_t state;
+    // ── Output pixel counter ──────────────────────────────────
+    logic [$clog2(IMG_H*IMG_W+1)-1:0] out_count;
 
-    // ── Kernel position counters (for 9 MAC ops) ──────────────
-    logic [1:0] kr, kc;  // kernel row, col (0,1,2)
-    logic       mac_en;
-
-    // ── State machine ─────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────
+    // Start/active control
+    // ─────────────────────────────────────────────────────────
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
-            state   <= IDLE;
-            row_cnt <= '0;
-            col_cnt <= '0;
-            ic_cnt  <= '0;
-            kr      <= '0;
-            kc      <= '0;
-            mac_en  <= 1'b0;
-            out_valid <= 1'b0;
+            active    <= 1'b0;
+            in_row    <= '0;
+            in_col    <= '0;
+            pix_count <= '0;
         end
         else begin
-            case (state)
+            if (start) active <= 1'b1;
 
-                IDLE: begin
-                    out_valid <= 1'b0;
-                    if (start) begin
-                        state   <= FILL_BUF;
-                        row_cnt <= '0;
-                        col_cnt <= '0;
-                    end
+            if (active && pixel_valid) begin
+                // Write pixel to line buffer
+                line_buf[in_row % 3][in_col] <= pixel_in;
+
+                // Advance position
+                if (in_col == IMG_W - 1) begin
+                    in_col <= '0;
+                    in_row <= in_row + 1;
+                end
+                else begin
+                    in_col <= in_col + 1;
+                end
+                pix_count <= pix_count + 1;
+            end
+        end
+    end
+
+    // ─────────────────────────────────────────────────────────
+    // Compute engine
+    // Starts after we have 3 rows buffered (pix_count >= IMG_W*3)
+    // Then computes one output pixel per (9*IN_CH) cycles
+    // ─────────────────────────────────────────────────────────
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            computing <= 1'b0;
+            kr        <= '0;
+            kc        <= '0;
+            ic        <= '0;
+            out_row   <= '0;
+            out_col   <= '0;
+            out_valid <= 1'b0;
+            out_count <= '0;
+            for (int o = 0; o < OUT_CH; o++)
+                accum[o] <= '0;
+        end
+        else begin
+            out_valid <= 1'b0;
+
+            // Start computing when 3 rows are ready
+            if (!computing &&
+                pix_count >= IMG_W * 2 + 3 &&
+                out_count < IMG_H * IMG_W) begin
+                computing <= 1'b1;
+                kr <= '0;
+                kc <= '0;
+                ic <= '0;
+                // Clear accumulators
+                for (int o = 0; o < OUT_CH; o++)
+                    accum[o] <= '0;
+            end
+
+            if (computing) begin
+                // MAC: accum[oc] += window * weight
+                for (int o = 0; o < OUT_CH; o++) begin
+                    // Get window pixel with zero padding
+                    logic signed [7:0] win_pix;
+                    logic signed [$clog2(IMG_H+2):0] wr;
+                    logic signed [$clog2(IMG_W+2):0] wc;
+                    wr = out_row + kr - PADDING;
+                    wc = out_col + kc - PADDING;
+
+                    if (wr < 0 || wr >= IMG_H ||
+                        wc < 0 || wc >= IMG_W)
+                        win_pix = 8'sd0;
+                    else
+                        win_pix = line_buf[wr % 3][wc][ic];
+
+                    accum[o] <= accum[o] +
+                        ACCUM_BITS'(signed'(
+                            win_pix * weights[o][ic][kr][kc]
+                        ));
                 end
 
-                // Fill line buffer with incoming pixels
-                FILL_BUF: begin
-                    if (pixel_valid) begin
-                        // Shift rows when col wraps
-                        if (col_cnt == IMG_W - 1) begin
-                            col_cnt <= '0;
-                            row_cnt <= row_cnt + 1;
-                        end
-                        else begin
-                            col_cnt <= col_cnt + 1;
-                        end
+                // Step kernel position
+                if (kc == 2) begin
+                    kc <= '0;
+                    if (kr == 2) begin
+                        kr <= '0;
+                        if (ic == IN_CH - 1) begin
+                            // Done with this output pixel
+                            ic        <= '0;
+                            out_valid <= 1'b1;
+                            out_count <= out_count + 1;
+                            computing <= 1'b0;
 
-                        // Have at least 3 rows? Start computing
-                        if (row_cnt >= 2 && col_cnt >= 2) begin
-                            state <= COMPUTE;
-                        end
-                    end
-                end
-
-                // Extract 3x3 window and start MAC
-                COMPUTE: begin
-                    ic_cnt <= '0;
-                    kr     <= '0;
-                    kc     <= '0;
-                    mac_en <= 1'b1;
-                    state  <= ACC_IC;
-                end
-
-                // Accumulate all kernel positions and input channels
-                ACC_IC: begin
-                    // Step through kernel positions
-                    if (kc == 2) begin
-                        kc <= '0;
-                        if (kr == 2) begin
-                            kr <= '0;
-                            // Done with one input channel
-                            if (ic_cnt == IN_CH - 1) begin
-                                mac_en <= 1'b0;
-                                state  <= OUT_PIXEL;
+                            // Advance output position
+                            if (out_col == IMG_W - 1) begin
+                                out_col <= '0;
+                                out_row <= out_row + 1;
                             end
                             else begin
-                                ic_cnt <= ic_cnt + 1;
+                                out_col <= out_col + STRIDE;
                             end
+
+                            // Clear for next pixel
+                            for (int o = 0; o < OUT_CH; o++)
+                                accum[o] <= '0;
                         end
                         else begin
-                            kr <= kr + 1;
+                            ic <= ic + 1;
                         end
                     end
                     else begin
-                        kc <= kc + 1;
+                        kr <= kr + 1;
                     end
                 end
-
-                // Output pixel result
-                OUT_PIXEL: begin
-                    out_valid <= 1'b1;
-                    state     <= FILL_BUF;  // ready for next pixel
-                end
-
-                default: state <= IDLE;
-
-            endcase
-        end
-    end
-
-    // ── Line buffer write ─────────────────────────────────────
-    // Write incoming pixels into circular line buffer
-    always_ff @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
-            // Clear line buffer
-        end
-        else if (pixel_valid) begin
-            // Write to current row position
-            line_buf[row_cnt % 3][col_cnt] <= pixel_in;
-        end
-    end
-
-    // ── Window extraction ─────────────────────────────────────
-    // Extract 3x3 neighborhood from line buffer
-    genvar gr, gc;
-    generate
-        for (gr = 0; gr < 3; gr++) begin : gen_wr
-            for (gc = 0; gc < 3; gc++) begin : gen_wc
-                always_comb begin
-                    // Handle zero padding at borders
-                    if ((row_cnt + gr < PADDING) ||
-                        (row_cnt + gr >= IMG_H + PADDING) ||
-                        (col_cnt + gc < PADDING) ||
-                        (col_cnt + gc >= IMG_W + PADDING))
-                        window[gr][gc] = '{default: 8'sd0};
-                    else
-                        window[gr][gc] =
-                            line_buf[(row_cnt + gr) % 3]
-                                    [col_cnt + gc - PADDING];
+                else begin
+                    kc <= kc + 1;
                 end
             end
         end
-    endgenerate
+    end
 
-    // ── MAC accumulation ──────────────────────────────────────
-    // For each output channel accumulate:
-    //   accum[oc] += window[kr][kc][ic] * weights[oc][ic][kr][kc]
-    genvar oc;
+    // ── Connect output ────────────────────────────────────────
+    genvar o;
     generate
-        for (oc = 0; oc < OUT_CH; oc++) begin : gen_oc
-            always_ff @(posedge clk or negedge rst_n) begin
-                if (!rst_n) begin
-                    accum[oc] <= '0;
-                end
-                else if (state == COMPUTE) begin
-                    // Clear accumulator for new pixel
-                    accum[oc] <= '0;
-                end
-                else if (mac_en) begin
-                    // Accumulate kernel position [kr][kc] for channel ic
-                    accum[oc] <= accum[oc] +
-                        ACCUM_BITS'(signed'(
-                            window[kr][kc][ic_cnt] *
-                            weights[oc][ic_cnt][kr][kc]
-                        ));
-                end
-            end
-
-            // Connect to output
-            assign pixel_out[oc] = accum[oc];
+        for (o = 0; o < OUT_CH; o++) begin : gen_out
+            assign pixel_out[o] = accum[o];
         end
     endgenerate
 
