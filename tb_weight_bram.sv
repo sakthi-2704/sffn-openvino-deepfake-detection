@@ -158,32 +158,51 @@ module tb_weight_bram;
         // rd_valid should be HIGH exactly 1 cycle after rd_en
         // ══════════════════════════════════════════════════════
         $display("\n== TEST 3: Read latency verification ==");
-
+        
+        // Ensure rd_en is LOW first — wait 2 cycles clean
+        
         @(negedge clk);
+        rd_en     = 1'b0;
         layer_sel = 0;
         rd_addr   = 10'd5;
-        rd_en     = 1'b1;
-        @(posedge clk);
-
-        // Check: rd_valid should be LOW this cycle
-        // (data not ready yet)
+        repeat(2) @(posedge clk);
+        
+        // Now assert rd_en for exactly 1 cycle
+        
         @(negedge clk);
-        if (rd_valid === 1'b0)
-            $display("  [PASS] Cycle 0: rd_valid=0 (correct)");
-        else
-            $display("  [FAIL] Cycle 0: rd_valid should be 0");
-
+        rd_en = 1'b1;
+        @(posedge clk);   // clock edge — BRAM samples rd_en=1
+        
+        // Immediately check: rd_valid should still be LOW
+        // (registered output not ready until NEXT cycle)
+        
+        @(negedge clk);
+        if (rd_valid === 1'b0) begin
+            $display("  [PASS] Cycle 0: rd_valid=0 (correct, 1 cycle latency)");
+            pass_count = pass_count + 1;
+        end
+        
+        else begin
+            $display("  [FAIL] Cycle 0: rd_valid=1 (should be 0, check pipeline)");
+            fail_count = fail_count + 1;
+        end
+        
+        // Deassert rd_en
+        
         rd_en = 1'b0;
-        @(posedge clk);
+        
+        @(posedge clk);   // clock edge — registered output appears
         @(negedge clk);
-
-        // Check: rd_valid should be HIGH now (1 cycle later)
+        
+        // Now rd_valid should be HIGH
+        
         if (rd_valid === 1'b1) begin
             $display("  [PASS] Cycle 1: rd_valid=1 (correct)");
             pass_count = pass_count + 1;
         end
+        
         else begin
-            $display("  [FAIL] Cycle 1: rd_valid should be 1");
+            $display("  [FAIL] Cycle 1: rd_valid=0 (should be 1)");
             fail_count = fail_count + 1;
         end
 
