@@ -240,7 +240,7 @@ R0
 w1773856114
 8tb_conv_1x1_engine.sv
 Ftb_conv_1x1_engine.sv
-L0 14
+Z32 L0 14
 R8
 r1
 !s85 0
@@ -320,6 +320,79 @@ r1
 !s108 1773768150.000000
 !s107 tb_mac_unit_int8.sv|
 !s90 -reportprogress|300|-sv|tb_mac_unit_int8.sv|
+!i113 1
+o-sv
+R12
+vtb_weight_bram
+R1
+!s110 1773960133
+!i10b 1
+!s100 ATJ?DNOcfn`3zIdSDGDOa2
+IPU=kIaa2AZ]lR5UOz4G2Q3
+R3
+!s105 tb_weight_bram_sv_unit
+S1
+R0
+w1773960127
+8tb_weight_bram.sv
+Ftb_weight_bram.sv
+R32
+R8
+r1
+!s85 0
+31
+!s108 1773960133.000000
+!s107 tb_weight_bram.sv|
+!s90 -reportprogress|300|-sv|tb_weight_bram.sv|
+!i113 1
+o-sv
+R12
+vweight_bram
+R1
+R2
+DXx4 work 19 weight_bram_sv_unit 0 22 I@JWDOd=RP?L2_BHiY]EV0
+R3
+r1
+!s85 0
+31
+!i10b 1
+!s100 GcXC4]E2A5kW0lC1BKcJJ3
+IUCDVJIS4KSoDATV`>LGca1
+!s105 weight_bram_sv_unit
+S1
+R0
+Z33 w1773959388
+Z34 8weight_bram.sv
+Z35 Fweight_bram.sv
+L0 30
+R8
+Z36 !s108 1773959493.000000
+Z37 !s107 weight_bram.sv|
+Z38 !s90 -reportprogress|300|-sv|weight_bram.sv|
+!i113 1
+o-sv
+R12
+Xweight_bram_sv_unit
+R1
+R2
+VI@JWDOd=RP?L2_BHiY]EV0
+r1
+!s85 0
+31
+!i10b 1
+!s100 OIL^ILC^:;=6`lIoajD]82
+II@JWDOd=RP?L2_BHiY]EV0
+!i103 1
+S1
+R0
+R33
+R34
+R35
+L0 28
+R8
+R36
+R37
+R38
 !i113 1
 o-sv
 R12

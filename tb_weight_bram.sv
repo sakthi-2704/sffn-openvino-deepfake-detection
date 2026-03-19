@@ -114,30 +114,22 @@ module tb_weight_bram;
         // Directly force values into BRAM array for testing
         // In real use these come from .mif files
         $display("\n-- Loading test patterns into BRAM --");
+        for(i=0;i<128;i++) begin
+            DUT.bram[0][i] = i[7:0];    //Layer 0: sequential
+            DUT.bram[1][i] = ~i[7:0];   //Layer 2: inverted
+            DUT.bram[2][i] = 8'hAA;     //Layer 3: alternating
+        end
 
-        // Layer 0: addr[i] = i (0x00..0xFF)
-        for (i = 0; i < 256; i++)
-            force DUT.bram[0][i] = i[7:0];
-
-        // Layer 1: addr[i] = ~i (inverted)
-        for (i = 0; i < 256; i++)
-            force DUT.bram[1][i] = ~i[7:0];
-
-        // Layer 2: addr[i] = 0xAA alternating
-        for (i = 0; i < 256; i++)
-            force DUT.bram[2][i] = 8'hAA;
-
-        // Layer 3: addr[i] = i*2
-        for (i = 0; i < 128; i++)
-            force DUT.bram[3][i] = (i*2)[7:0];
-
-        release DUT.bram[0];
-        release DUT.bram[1];
-        release DUT.bram[2];
-        release DUT.bram[3];
+        begin
+            integer temp;
+            for(i=0;i<128;i++) begin
+                temp=i*2;
+                DUT.bram[3][i] = temp[7:0];    //Layer 3: doubled
+            end
+        end 
 
         @(posedge clk);
-        $display("  Test patterns loaded");
+        $display(" Test Patterns Loaded");
 
         // ══════════════════════════════════════════════════════
         // TEST 1: Basic read from layer 0
