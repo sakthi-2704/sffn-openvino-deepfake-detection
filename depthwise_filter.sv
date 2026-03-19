@@ -106,7 +106,9 @@ module depthwise_filter #(
     reg signed [31:0] product [0:CHANNELS-1];
 
     // ── Loop variables ────────────────────────────────────────
-    integer ch, ii;
+    integer ch;
+    integer ii;
+    integer lch;
 
     // ─────────────────────────────────────────────────────────
     // COMBINATIONAL: window pixel extraction for all channels
@@ -156,9 +158,9 @@ module depthwise_filter #(
             kr        <= 3'd0;
             kc        <= 3'd0;
             out_valid <= 1'b0;
-            for (ch = 0; ch < CHANNELS; ch++) begin
-                accum  [ch] <= 32'sd0;
-                out_reg[ch] <= 32'sd0;
+            for (lch = 0; lch < CHANNELS; lch++) begin
+                accum  [lch] <= 32'sd0;
+                out_reg[lch] <= 32'sd0;
             end
         end
         else begin
@@ -177,9 +179,9 @@ module depthwise_filter #(
                         out_count <= 10'd0;
                         kr        <= 3'd0;
                         kc        <= 3'd0;
-                        for (ch = 0; ch < CHANNELS; ch++) begin
-                            accum  [ch] <= 32'sd0;
-                            out_reg[ch] <= 32'sd0;
+                        for (lch = 0; lch < CHANNELS; lch++) begin
+                            accum  [lch] <= 32'sd0;
+                            out_reg[lch] <= 32'sd0;
                         end
                     end
                 end
@@ -200,8 +202,8 @@ module depthwise_filter #(
                                 in_row <= 8'd0;
                                 kr     <= 3'd0;
                                 kc     <= 3'd0;
-                                for (ch = 0; ch < CHANNELS; ch++)
-                                    accum[ch] <= 32'sd0;
+                                for (lch = 0; lch < CHANNELS; lch++)
+                                    accum[lch] <= 32'sd0;
                             end
                             else
                                 in_row <= in_row + 8'd1;
@@ -216,8 +218,8 @@ module depthwise_filter #(
                 // This is the key FPGA efficiency advantage
                 S_COMPUTE: begin
                     // MAC all channels in parallel
-                    for (ch = 0; ch < CHANNELS; ch++)
-                        accum[ch] <= accum[ch] + product[ch];
+                    for (lch = 0; lch < CHANNELS; lch++)
+                        accum[lch] <= accum[lch] + product[lch];
 
                     // Advance kernel position
                     if (kc == KS - 1) begin
@@ -228,9 +230,9 @@ module depthwise_filter #(
 
                             // Capture to output register
                             // BEFORE clearing accum
-                            for (ch = 0; ch < CHANNELS; ch++)
-                                out_reg[ch] <= accum[ch] +
-                                               product[ch];
+                            for (lch = 0; lch < CHANNELS; lch++)
+                                out_reg[lch] <= accum[lch] +
+                                               product[lch];
 
                             state <= S_OUTPUT;
                         end
@@ -255,8 +257,8 @@ module depthwise_filter #(
                         out_col <= out_col + STRIDE;
 
                     // Clear accumulator for next pixel
-                    for (ch = 0; ch < CHANNELS; ch++)
-                        accum[ch] <= 32'sd0;
+                    for (lch = 0; lch < CHANNELS; lch++)
+                        accum[lch] <= 32'sd0;
 
                     // All pixels done?
                     if (out_row == IMG_H - 1 &&

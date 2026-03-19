@@ -106,6 +106,50 @@ R19
 !i113 1
 o-sv
 R12
+vdepthwise_filter
+R1
+!i10b 1
+!s100 PG43EdeHQ1TMQkRm4hmDE0
+IN>PR6F>1?9@H]O;>X]UT;3
+R3
+!s105 depthwise_filter_sv_unit
+S1
+R0
+Z20 w1773957589
+Z21 8depthwise_filter.sv
+Z22 Fdepthwise_filter.sv
+L0 42
+R8
+Z23 !s108 1773958612.000000
+Z24 !s107 depthwise_filter.sv|
+Z25 !s90 -reportprogress|300|-sv|depthwise_filter.sv|
+!i113 1
+o-sv
+R12
+Xdepthwise_filter_sv_unit
+R1
+R2
+VUR<o^R>J=Jeni>Z5P;;2=0
+r1
+!s85 0
+31
+!i10b 1
+!s100 mC_f06UKJLl`1D1N2D<T^1
+IUR<o^R>J=Jeni>Z5P;;2=0
+!i103 1
+S1
+R0
+R20
+R21
+R22
+L0 40
+R8
+R23
+R24
+R25
+!i113 1
+o-sv
+R12
 vmac_unit_int8
 R1
 R2
@@ -120,14 +164,14 @@ I`1JFJjV[adA4oDCho_NPW2
 !s105 mac_unit_int8_sv_unit
 S1
 R0
-Z20 w1773765509
-Z21 8mac_unit_int8.sv
-Z22 Fmac_unit_int8.sv
+Z26 w1773765509
+Z27 8mac_unit_int8.sv
+Z28 Fmac_unit_int8.sv
 L0 3
 R8
-Z23 !s108 1773949208.000000
-Z24 !s107 mac_unit_int8.sv|
-Z25 !s90 -reportprogress|300|-sv|mac_unit_int8.sv|
+Z29 !s108 1773958604.000000
+Z30 !s107 mac_unit_int8.sv|
+Z31 !s90 -reportprogress|300|-sv|mac_unit_int8.sv|
 !i113 1
 o-sv
 R12
@@ -144,20 +188,20 @@ I^fVhDE^diR1dZ:1X0PI@12
 !i103 1
 S1
 R0
-R20
-R21
-R22
+R26
+R27
+R28
 L0 1
 R8
-R23
-R24
-R25
+R29
+R30
+R31
 !i113 1
 o-sv
 R12
 Xsffn_params
 R1
-!s110 1773949197
+!s110 1773958583
 !i10b 1
 !s100 WjT@gg^T:Ycmz<NPOS1bz3
 IahTggI?LPnL_fYR@d`^Ld1
@@ -172,7 +216,7 @@ R8
 r1
 !s85 0
 31
-!s108 1773949197.000000
+!s108 1773958583.000000
 !s107 sffn_params_pkg.sv|
 !s90 -reportprogress|300|-sv|sffn_params_pkg.sv|
 !i113 1
