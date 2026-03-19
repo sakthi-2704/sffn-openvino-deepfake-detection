@@ -155,6 +155,55 @@ R25
 !i113 1
 o-sv
 R12
+vdual_stream_controller
+R1
+R2
+DXx4 work 30 dual_stream_controller_sv_unit 0 22 `UJIzlU4z]344cENzO>[;0
+R3
+r1
+!s85 0
+31
+!i10b 1
+!s100 I]gTa8_BS_Bn<S3bC>cOE0
+I9]Bj?>nm;T<=48NdX<>XO2
+!s105 dual_stream_controller_sv_unit
+S1
+R0
+Z26 w1773961025
+Z27 8dual_stream_controller.sv
+Z28 Fdual_stream_controller.sv
+L0 41
+R8
+Z29 !s108 1773961084.000000
+Z30 !s107 dual_stream_controller.sv|
+Z31 !s90 -reportprogress|300|-sv|dual_stream_controller.sv|
+!i113 1
+o-sv
+R12
+Xdual_stream_controller_sv_unit
+R1
+R2
+V`UJIzlU4z]344cENzO>[;0
+r1
+!s85 0
+31
+!i10b 1
+!s100 29@94bB42Roez2eM6c]DS0
+I`UJIzlU4z]344cENzO>[;0
+!i103 1
+S1
+R0
+R26
+R27
+R28
+L0 39
+R8
+R29
+R30
+R31
+!i113 1
+o-sv
+R12
 vmac_unit_int8
 R1
 R2
@@ -169,14 +218,14 @@ I`1JFJjV[adA4oDCho_NPW2
 !s105 mac_unit_int8_sv_unit
 S1
 R0
-Z26 w1773765509
-Z27 8mac_unit_int8.sv
-Z28 Fmac_unit_int8.sv
+Z32 w1773765509
+Z33 8mac_unit_int8.sv
+Z34 Fmac_unit_int8.sv
 L0 3
 R8
-Z29 !s108 1773958604.000000
-Z30 !s107 mac_unit_int8.sv|
-Z31 !s90 -reportprogress|300|-sv|mac_unit_int8.sv|
+Z35 !s108 1773958604.000000
+Z36 !s107 mac_unit_int8.sv|
+Z37 !s90 -reportprogress|300|-sv|mac_unit_int8.sv|
 !i113 1
 o-sv
 R12
@@ -193,14 +242,14 @@ I^fVhDE^diR1dZ:1X0PI@12
 !i103 1
 S1
 R0
-R26
-R27
-R28
+R32
+R33
+R34
 L0 1
 R8
-R29
-R30
-R31
+R35
+R36
+R37
 !i113 1
 o-sv
 R12
@@ -240,7 +289,7 @@ R0
 w1773856114
 8tb_conv_1x1_engine.sv
 Ftb_conv_1x1_engine.sv
-Z32 L0 14
+Z38 L0 14
 R8
 r1
 !s85 0
@@ -299,6 +348,30 @@ r1
 !i113 1
 o-sv
 R12
+vtb_dual_stream_controller
+R1
+!s110 1773961781
+!i10b 1
+!s100 _95mk>@1M_oOnEG7:NFGH3
+I^]BdgR>>eecOoH4=K2a9@2
+R3
+!s105 tb_dual_stream_controller_sv_unit
+S1
+R0
+w1773961762
+8tb_dual_stream_controller.sv
+Ftb_dual_stream_controller.sv
+R38
+R8
+r1
+!s85 0
+31
+!s108 1773961781.000000
+!s107 tb_dual_stream_controller.sv|
+!s90 -reportprogress|300|-sv|tb_dual_stream_controller.sv|
+!i113 1
+o-sv
+R12
 vtb_mac_unit_int8
 R1
 !s110 1773768150
@@ -336,7 +409,7 @@ R0
 w1773960839
 8tb_weight_bram.sv
 Ftb_weight_bram.sv
-R32
+R38
 R8
 r1
 !s85 0
@@ -361,14 +434,14 @@ IUCDVJIS4KSoDATV`>LGca1
 !s105 weight_bram_sv_unit
 S1
 R0
-Z33 w1773959388
-Z34 8weight_bram.sv
-Z35 Fweight_bram.sv
+Z39 w1773959388
+Z40 8weight_bram.sv
+Z41 Fweight_bram.sv
 L0 30
 R8
-Z36 !s108 1773959493.000000
-Z37 !s107 weight_bram.sv|
-Z38 !s90 -reportprogress|300|-sv|weight_bram.sv|
+Z42 !s108 1773959493.000000
+Z43 !s107 weight_bram.sv|
+Z44 !s90 -reportprogress|300|-sv|weight_bram.sv|
 !i113 1
 o-sv
 R12
@@ -385,14 +458,14 @@ II@JWDOd=RP?L2_BHiY]EV0
 !i103 1
 S1
 R0
-R33
-R34
-R35
+R39
+R40
+R41
 L0 28
 R8
-R36
-R37
-R38
+R42
+R43
+R44
 !i113 1
 o-sv
 R12
