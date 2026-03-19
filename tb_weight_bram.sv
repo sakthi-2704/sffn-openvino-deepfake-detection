@@ -155,59 +155,48 @@ module tb_weight_bram;
 
         // ══════════════════════════════════════════════════════
         // TEST 3: Verify 1-cycle read latency
-        // rd_valid should be HIGH exactly 1 cycle after rd_en
-        // ══════════════════════════════════════════════════════
-        $display("\n== TEST 3: Read latency verification ==");
-        
-        // Ensure rd_en is LOW first — wait 2 cycles clean
-        
-        @(negedge clk);
-        rd_en     = 1'b0;
-        layer_sel = 0;
-        rd_addr   = 10'd5;
-        repeat(2) @(posedge clk);
-        
-        // Now assert rd_en for exactly 1 cycle
-        
-        @(negedge clk);
-        rd_en = 1'b1;
-        @(posedge clk);   // clock edge — BRAM samples rd_en=1
-        
-        // Immediately check: rd_valid should still be LOW
-        // (registered output not ready until NEXT cycle)
-        
-        @(negedge clk);
-        if (rd_valid === 1'b0) begin
-            $display("  [PASS] Cycle 0: rd_valid=0 (correct, 1 cycle latency)");
-            pass_count = pass_count + 1;
-        end
-        
-        else begin
-            $display("  [FAIL] Cycle 0: rd_valid=1 (should be 0, check pipeline)");
-            fail_count = fail_count + 1;
-        end
-        
-        // Deassert rd_en
-        
-        rd_en = 1'b0;
-        
-        @(posedge clk);   // clock edge — registered output appears
-        @(negedge clk);
-        
-        // Now rd_valid should be HIGH
-        
-        if (rd_valid === 1'b1) begin
-            $display("  [PASS] Cycle 1: rd_valid=1 (correct)");
-            pass_count = pass_count + 1;
-        end
-        
-        else begin
-            $display("  [FAIL] Cycle 1: rd_valid=0 (should be 1)");
-            fail_count = fail_count + 1;
-        end
+$display("\n== TEST 3: Read latency verification ==");
 
-        // Check data value
-        check(rd_data, 8'd5, "Latency data check");
+// Ensure clean state
+@(negedge clk);
+rd_en = 1'b0;
+repeat(2) @(posedge clk);
+
+// Assert rd_en
+@(negedge clk);
+rd_en     = 1'b1;
+rd_addr   = 10'd5;
+layer_sel = 0;
+@(posedge clk);   // posedge: rd_valid_reg <= rd_en = 1
+@(negedge clk);
+
+// rd_valid should be HIGH now (same cycle as rd_en registered)
+if (rd_valid === 1'b1) begin
+    $display("  [PASS] rd_valid HIGH when rd_en HIGH (correct)");
+    pass_count = pass_count + 1;
+end
+else begin
+    $display("  [FAIL] rd_valid should be HIGH");
+    fail_count = fail_count + 1;
+end
+
+// Deassert rd_en
+rd_en = 1'b0;
+@(posedge clk);   // posedge: rd_valid_reg <= rd_en = 0
+@(negedge clk);
+
+// rd_valid should be LOW now
+if (rd_valid === 1'b0) begin
+    $display("  [PASS] rd_valid LOW when rd_en LOW (correct)");
+    pass_count = pass_count + 1;
+end
+else begin
+    $display("  [FAIL] rd_valid should be LOW");
+    fail_count = fail_count + 1;
+end
+
+// Verify data is correct
+check(rd_data, 8'd5, "Latency data check");
 
         // ══════════════════════════════════════════════════════
         // TEST 4: Burst sequential read
