@@ -173,8 +173,7 @@ module tb_depthwise_filter;
         local_fail = 0;
 
         $display("\n[%s]", test_name);
-        $display("  Pix  Exp_CH0  Got_CH0  Exp_CH1"
-                 "  Got_CH1  Status");
+        $display("  Pix  Exp_CH0  Got_CH0  Exp_CH1  Got_CH1  Status");
         $display("  ─────────────────────────────────────────");
 
         for (p = 0; p < NPIX; p++) begin
