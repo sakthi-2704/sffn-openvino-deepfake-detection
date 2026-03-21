@@ -19,9 +19,9 @@ module sffn_top (
     localparam TOTAL_PIX = IMG_H * IMG_W;  // 16
 
     // ── Weight bus sizes ──────────────────────────────────────
-    localparam STEM_W_BITS  = 3  * 32 * 9 * 8;   // 6912
-    localparam FREQ1_W_BITS = 2  * 32 * 9 * 8;   // 4608
-    localparam DW_W_BITS    = 2  * 1  * 9 * 8;   // 144
+    localparam STEM_W_BITS  = 3   * 32 * 9 * 8;   // 6912
+    localparam FREQ1_W_BITS = 2   * 32 * 9 * 8;   // 4608
+    localparam DW_W_BITS    = 2   * 1  * 9 * 8;   // 144
     localparam FC_W_BITS    = 512 * (1280+64) * 8;
 
     // ── FSM ───────────────────────────────────────────────────
@@ -54,19 +54,39 @@ module sffn_top (
     logic [23:0] spatial_flat;
     logic [15:0] freq_flat;
 
-    // ── Conv outputs ──────────────────────────────────────────
+    // ── Spatial conv outputs ──────────────────────────────────
     logic [32*32-1:0]  spatial_out_flat;
     logic              spatial_out_valid;
 
+    // ── Depthwise outputs ─────────────────────────────────────
     logic [2*32-1:0]   dw_out_flat;
     logic              dw_out_valid;
 
+    // ── Freq conv1 pipeline ───────────────────────────────────
     logic              freq1_start;
     logic              freq1_started;
     logic [2*32-1:0]   dw_out_d1;
     logic              dw_out_valid_d1;
+    logic [2*32-1:0]   dw_out_d2;
+    logic              dw_out_valid_d2;
     logic [32*32-1:0]  freq_out_flat;
     logic              freq_out_valid;
+
+    // ── Output buffers for fusion replay ──────────────────────
+    logic [31:0] sp_buf [0:TOTAL_PIX-1];
+    logic [31:0] fr_buf [0:TOTAL_PIX-1];
+    logic [4:0]  sp_buf_cnt;
+    logic [4:0]  fr_buf_cnt;
+
+    // ── Replay signals ────────────────────────────────────────
+    logic [4:0]  sp_replay_cnt;
+    logic [4:0]  fr_replay_cnt;
+    logic        sp_replaying;
+    logic        fr_replaying;
+    logic [31:0] sp_replay_data;
+    logic [31:0] fr_replay_data;
+    logic        sp_replay_valid;
+    logic        fr_replay_valid;
 
     // ── Fusion signals ────────────────────────────────────────
     logic [1280*32-1:0]   spatial_big;
@@ -75,6 +95,7 @@ module sffn_top (
     logic [512*32-1:0]    fused_out;
     logic                 fusion_valid;
     logic                 fusion_done_sig;
+    logic                 gap_sp_done;     // from fusion module
 
     // ── BRAM signals ──────────────────────────────────────────
     logic [6:0]  bram_layer_sel;
@@ -83,7 +104,7 @@ module sffn_top (
     logic [7:0]  bram_rd_data;
     logic        bram_rd_valid;
 
-    // ── Weight buses ──────────────────────────────────────────
+    // ── Weight buses (zero for simulation) ────────────────────
     logic [STEM_W_BITS-1:0]  stem_weights;
     logic [FREQ1_W_BITS-1:0] freq1_weights;
     logic [DW_W_BITS-1:0]    dw_weights;
@@ -172,7 +193,7 @@ module sffn_top (
                 S_DONE: begin
                     frame_done <= 1'b1;
                     state      <= S_IDLE;
-                    $display("[DEBUG] FSM: DONE frame_done=1");
+                    $display("[DEBUG] frame_done=1");
                 end
 
                 default: state <= S_IDLE;
@@ -193,8 +214,6 @@ module sffn_top (
             if (frame_start)
                 sp_out_cnt <= '0;
             else if (spatial_out_valid) begin
-                $display("[DEBUG] Spatial out_valid pix=%0d",
-                          sp_out_cnt);
                 if (sp_out_cnt == TOTAL_PIX - 1) begin
                     sp_out_cnt   <= '0;
                     sp_conv_done <= 1'b1;
@@ -219,20 +238,22 @@ module sffn_top (
             if (frame_start)
                 fr_out_cnt <= '0;
             else if (freq_out_valid) begin
-                $display("[DEBUG] Freq out_valid pix=%0d",
-                          fr_out_cnt);
                 if (fr_out_cnt == TOTAL_PIX - 1) begin
                     fr_out_cnt   <= '0;
                     fr_conv_done <= 1'b1;
                     $display("[DEBUG] Freq conv DONE");
                 end
-                else
+                else begin
                     fr_out_cnt <= fr_out_cnt + 1;
+                    $display("[DEBUG] Freq pix=%0d/16", fr_out_cnt+1);
+                end
             end
         end
     end
 
-    // ── Done latches ──────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────
+    // Done latches
+    // ─────────────────────────────────────────────────────────
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             sp_done_latch <= 1'b0;
@@ -252,15 +273,124 @@ module sffn_top (
 
     assign both_conv_done = sp_done_latch && fr_done_latch;
 
-    // ── Debug monitors ────────────────────────────────────────
+    // ─────────────────────────────────────────────────────────
+    // Buffer spatial outputs as they arrive
+    // ─────────────────────────────────────────────────────────
+    integer buf_i;
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            sp_buf_cnt <= '0;
+            for (buf_i = 0; buf_i < TOTAL_PIX; buf_i++)
+                sp_buf[buf_i] <= '0;
+        end
+        else begin
+            if (frame_start)
+                sp_buf_cnt <= '0;
+            else if (spatial_out_valid) begin
+                sp_buf[sp_buf_cnt] <= spatial_out_flat[31:0];
+                if (sp_buf_cnt < TOTAL_PIX - 1)
+                    sp_buf_cnt <= sp_buf_cnt + 1;
+            end
+        end
+    end
+
+    // ─────────────────────────────────────────────────────────
+    // Buffer freq outputs as they arrive
+    // ─────────────────────────────────────────────────────────
+    integer buf_j;
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            fr_buf_cnt <= '0;
+            for (buf_j = 0; buf_j < TOTAL_PIX; buf_j++)
+                fr_buf[buf_j] <= '0;
+        end
+        else begin
+            if (frame_start)
+                fr_buf_cnt <= '0;
+            else if (freq_out_valid) begin
+                fr_buf[fr_buf_cnt] <= freq_out_flat[31:0];
+                if (fr_buf_cnt < TOTAL_PIX - 1)
+                    fr_buf_cnt <= fr_buf_cnt + 1;
+            end
+        end
+    end
+
+    // ─────────────────────────────────────────────────────────
+    // Replay logic
+    // Spatial replay starts when fusion_start fires
+    // Freq replay starts when gap_sp_done fires from fusion
+    // This ensures pixels arrive exactly when fusion needs them
+    // ─────────────────────────────────────────────────────────
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            sp_replaying    <= 1'b0;
+            fr_replaying    <= 1'b0;
+            sp_replay_cnt   <= '0;
+            fr_replay_cnt   <= '0;
+            sp_replay_valid <= 1'b0;
+            fr_replay_valid <= 1'b0;
+            sp_replay_data  <= '0;
+            fr_replay_data  <= '0;
+        end
+        else begin
+            sp_replay_valid <= 1'b0;
+            fr_replay_valid <= 1'b0;
+
+            // Start spatial replay when fusion starts
+            if (fusion_start) begin
+                sp_replaying  <= 1'b1;
+                sp_replay_cnt <= '0;
+                $display("[DEBUG] Starting spatial replay");
+            end
+
+            // Replay spatial pixels one per cycle
+            if (sp_replaying) begin
+                sp_replay_data  <= sp_buf[sp_replay_cnt];
+                sp_replay_valid <= 1'b1;
+                if (sp_replay_cnt == TOTAL_PIX - 1) begin
+                    sp_replaying  <= 1'b0;
+                    sp_replay_cnt <= '0;
+                    $display("[DEBUG] Spatial replay done");
+                end
+                else
+                    sp_replay_cnt <= sp_replay_cnt + 1;
+            end
+
+            // Start freq replay when fusion signals gap_sp_done
+            // This is the key fix — freq replay starts exactly
+            // when fusion enters S_GAP_FR state
+            if (gap_sp_done) begin
+                fr_replaying  <= 1'b1;
+                fr_replay_cnt <= '0;
+                $display("[DEBUG] gap_sp_done → starting freq replay");
+            end
+
+            // Replay freq pixels one per cycle
+            if (fr_replaying) begin
+                fr_replay_data  <= fr_buf[fr_replay_cnt];
+                fr_replay_valid <= 1'b1;
+                if (fr_replay_cnt == TOTAL_PIX - 1) begin
+                    fr_replaying  <= 1'b0;
+                    fr_replay_cnt <= '0;
+                    $display("[DEBUG] Freq replay done");
+                end
+                else
+                    fr_replay_cnt <= fr_replay_cnt + 1;
+            end
+        end
+    end
+
+    // ─────────────────────────────────────────────────────────
+    // Debug monitors
+    // ─────────────────────────────────────────────────────────
     always @(posedge dw_out_valid)
-        $display("[DEBUG] DW out_valid fired at %0t", $time);
+        $display("[DEBUG] DW out_valid at %0t", $time);
 
     always @(posedge freq1_start)
-        $display("[DEBUG] freq1_start fired at %0t", $time);
+        $display("[DEBUG] freq1_start at %0t", $time);
 
     always @(posedge freq_out_valid)
-        $display("[DEBUG] freq_out_valid fired at %0t", $time);
+        $display("[DEBUG] freq_out_valid at %0t", $time);
 
     // ─────────────────────────────────────────────────────────
     // BRAM
@@ -280,8 +410,7 @@ module sffn_top (
     );
 
     // ─────────────────────────────────────────────────────────
-    // Spatial Conv (stem)
-    // IN=3, OUT=32, 3x3
+    // Spatial Conv
     // ─────────────────────────────────────────────────────────
     conv_3x3_systolic #(
         .IN_CH   (3),
@@ -303,7 +432,6 @@ module sffn_top (
 
     // ─────────────────────────────────────────────────────────
     // Freq Depthwise Conv
-    // CHANNELS=2, 3x3
     // ─────────────────────────────────────────────────────────
     depthwise_filter #(
         .CHANNELS    (2),
@@ -325,7 +453,6 @@ module sffn_top (
 
     // ─────────────────────────────────────────────────────────
     // Freq Conv1 start generator
-    // Fires once when first dw_out_valid arrives
     // ─────────────────────────────────────────────────────────
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -344,7 +471,7 @@ module sffn_top (
         end
     end
 
-    // Delay dw output by 1 cycle for timing
+    // 2-stage pipeline delay for dw output
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             dw_out_d1       <= '0;
@@ -356,9 +483,19 @@ module sffn_top (
         end
     end
 
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            dw_out_d2       <= '0;
+            dw_out_valid_d2 <= 1'b0;
+        end
+        else begin
+            dw_out_d2       <= dw_out_d1;
+            dw_out_valid_d2 <= dw_out_valid_d1;
+        end
+    end
+
     // ─────────────────────────────────────────────────────────
     // Freq Conv1
-    // IN=2, OUT=32, 3x3
     // ─────────────────────────────────────────────────────────
     conv_3x3_systolic #(
         .IN_CH   (2),
@@ -371,25 +508,25 @@ module sffn_top (
         .clk           (clk),
         .rst_n         (rst_n),
         .start         (freq1_start),
-        .pixel_in_flat (dw_out_d1[2*8-1:0]),
-        .pixel_valid   (dw_out_valid_d1),
+        .pixel_in_flat (dw_out_d2[2*8-1:0]),
+        .pixel_valid   (dw_out_valid_d2),
         .weights_flat  (freq1_weights),
         .pixel_out_flat(freq_out_flat),
         .out_valid     (freq_out_valid)
     );
 
     // ─────────────────────────────────────────────────────────
-    // Feature packing
+    // Feature packing — use replay data for fusion
     // ─────────────────────────────────────────────────────────
     always_comb begin
         spatial_big       = '0;
         freq_big          = '0;
-        spatial_big[31:0] = spatial_out_flat[31:0];
-        freq_big[31:0]    = freq_out_flat[31:0];
+        spatial_big[31:0] = sp_replay_data;
+        freq_big[31:0]    = fr_replay_data;
     end
 
     // ─────────────────────────────────────────────────────────
-    // Fusion
+    // Fusion Module
     // ─────────────────────────────────────────────────────────
     fusion_module #(
         .SPATIAL_CH (1280),
@@ -402,13 +539,14 @@ module sffn_top (
         .rst_n            (rst_n),
         .start            (fusion_start),
         .spatial_feat_flat(spatial_big),
-        .spatial_valid    (spatial_out_valid),
+        .spatial_valid    (sp_replay_valid),
         .freq_feat_flat   (freq_big),
-        .freq_valid       (freq_out_valid),
+        .freq_valid       (fr_replay_valid),
         .fc_weights_flat  (fc_weights),
         .fused_out_flat   (fused_out),
         .fused_valid      (fusion_valid),
-        .done             (fusion_done_sig)
+        .done             (fusion_done_sig),
+        .gap_sp_done      (gap_sp_done)
     );
 
     // ── Output ────────────────────────────────────────────────
