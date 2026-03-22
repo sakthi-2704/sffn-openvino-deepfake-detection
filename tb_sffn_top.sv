@@ -1,4 +1,5 @@
 `timescale 1ns/1ps
+`include "sim_weights.sv"
 
 module tb_sffn_top;
 
@@ -41,23 +42,46 @@ module tb_sffn_top;
     endtask
 
     task stream_frame();
-        integer i;
-        $display("\n== TEST 3: Stream 4x4 pixels ==");
-        for (i = 0; i < FRAME_PIXELS; i = i + 1) begin
-            @(posedge clk);
-            in_valid      = 1;
-            spatial_in[0] = $urandom_range(1, 255);
-            spatial_in[1] = $urandom_range(1, 255);
-            spatial_in[2] = $urandom_range(1, 255);
-            freq_in[0]    = $urandom_range(1, 255);
-            freq_in[1]    = $urandom_range(1, 255);
-            spatial_count = spatial_count + 1;
-            $display("[DEBUG] Pixel=%0d/%0d", spatial_count, FRAME_PIXELS);
-        end
+    integer i;
+    logic [23:0] sp_pix [0:15];
+    logic [15:0] fr_pix [0:15];
+
+    // Real pixel values from generate_test_image.py
+    sp_pix[0]  = 24'he1dc66; sp_pix[1]  = 24'h3db35f;
+    sp_pix[2]  = 24'h5ccbea; sp_pix[3]  = 24'hf36203;
+    sp_pix[4]  = 24'hf5950e; sp_pix[5]  = 24'hf46a2e;
+    sp_pix[6]  = 24'h47bb63; sp_pix[7]  = 24'hc799d4;
+    sp_pix[8]  = 24'h41aebc; sp_pix[9]  = 24'h2c1499;
+    sp_pix[10] = 24'h6698cb; sp_pix[11] = 24'h27f0d6;
+    sp_pix[12] = 24'h221879; sp_pix[13] = 24'h41d272;
+    sp_pix[14] = 24'hd627ef; sp_pix[15] = 24'h1997f4;
+
+    fr_pix[0]  = 16'h914a;   fr_pix[1]  = 16'h0ede;
+    fr_pix[2]  = 16'h55ca;   fr_pix[3]  = 16'h7591;
+    fr_pix[4]  = 16'hb857;   fr_pix[5]  = 16'hddbd;
+    fr_pix[6]  = 16'hed74;   fr_pix[7]  = 16'h556d;
+    fr_pix[8]  = 16'hac63;   fr_pix[9]  = 16'h99e2;
+    fr_pix[10] = 16'heb67;   fr_pix[11] = 16'h2492;
+    fr_pix[12] = 16'h3e97;   fr_pix[13] = 16'hb544;
+    fr_pix[14] = 16'ha082;   fr_pix[15] = 16'ha6a0;
+
+    $display("\n== TEST 3: Stream real 4x4 image ==");
+    for (i = 0; i < 16; i++) begin
         @(posedge clk);
-        in_valid = 0;
-        $display("  Streaming complete");
-    endtask
+        in_valid      = 1;
+        spatial_in[0] = sp_pix[i][7:0];
+        spatial_in[1] = sp_pix[i][15:8];
+        spatial_in[2] = sp_pix[i][23:16];
+        freq_in[0]    = fr_pix[i][7:0];
+        freq_in[1]    = fr_pix[i][15:8];
+        spatial_count = spatial_count + 1;
+        $display("[DEBUG] Pixel=%0d sp=%0h fr=%0h",
+                  i+1, sp_pix[i], fr_pix[i]);
+    end
+    @(posedge clk);
+    in_valid = 0;
+    $display("  Streaming complete");
+endtask
 
     always @(posedge clk) begin
         if (out_valid) begin

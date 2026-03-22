@@ -1,4 +1,5 @@
 `timescale 1ns/1ps
+`include "sim_weights.sv"
 import sffn_params::*;
 
 module sffn_top (
@@ -109,9 +110,9 @@ module sffn_top (
     logic [FREQ1_W_BITS-1:0] freq1_weights;
     logic [DW_W_BITS-1:0]    dw_weights;
 
-    assign stem_weights  = '0;
-    assign freq1_weights = '0;
-    assign dw_weights    = '0;
+    assign stem_weights  = STEM_W_HEX;
+    assign freq1_weights = FREQ1_W_HEX;
+    assign dw_weights    = DW_W_HEX;
     assign fc_weights    = '0;
 
     // ── Pack flat inputs ──────────────────────────────────────
